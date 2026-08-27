@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { backend, AuthError } from "@/lib/backend";
+import { backend, backendName, AuthError } from "@/lib/backend";
 
 type Mode = "register" | "login";
 
@@ -98,7 +98,9 @@ export default function AuthCard() {
       </form>
 
       <p className="mt-4 text-center text-xs text-muted">
-        Demo mode: accounts live only in this browser until a database is linked.
+        {backendName === "supabase"
+          ? "Accounts are stored securely — log in from any device."
+          : "Demo mode: accounts live only in this browser until a database is linked."}
       </p>
     </div>
   );
