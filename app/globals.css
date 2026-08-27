@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0b0e14;
+  --panel: #121722;
+  --panel2: #171e2c;
+  --line: #232b3d;
+  --text: #e6ebf5;
+  --muted: #8b96ab;
+  --accent: #5eead4;
+  --accent2: #818cf8;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --green: #4ade80;
+  --blue: #60a5fa;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel2);
+  --color-line: var(--line);
+  --color-body: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent2: var(--accent2);
+  --color-danger: var(--red);
+  --color-warn: var(--amber);
+  --color-ok: var(--green);
+  --color-info: var(--blue);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+input, select, textarea {
+  @apply w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm text-body outline-none focus:border-accent;
+}
+
+.label {
+  @apply mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted;
+}
+
+.chip {
+  @apply cursor-pointer select-none rounded-full border border-line bg-panel2 px-3 py-1 text-[13px] transition-colors;
+}
+.chip-on {
+  @apply border-accent bg-accent/10 text-accent;
+}
+.chip-kw {
+  @apply cursor-default border-accent2 bg-accent2/10 text-accent2;
+}
+
+.btn {
+  @apply cursor-pointer rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-[#04211c] transition-opacity hover:opacity-90 disabled:opacity-50;
+}
+.btn-ghost {
+  @apply cursor-pointer rounded-lg border border-accent bg-transparent px-5 py-2 text-sm font-semibold text-accent hover:bg-accent/10;
+}
