@@ -16,10 +16,20 @@ export function extractApplicant(text: string): ExtractedApplicant {
   const out: ExtractedApplicant = {};
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
-  // Name: first line that looks like "Firstname Lastname" (2-4 capitalised words)
+  // Name: 2-4 capitalised words at the start of an early line, either alone
+  // or followed by contact details (PDF extraction often joins the header
+  // line, e.g. "Simba Conteh name@email.com 07..."). Skip institution lines.
   for (const line of lines.slice(0, 5)) {
-    if (/^[A-Z][a-zA-Z'-]+(\s[A-Z][a-zA-Z'-]+){1,3}$/.test(line)) {
-      out.name = line;
+    const m = line.match(
+      /^([A-Z][a-zA-Z'-]+(?: [A-Z][a-zA-Z'-]+){1,3})(?=$| *[|,•·–-] | +[\w.+-]+@| +\+?\d)/,
+    );
+    if (
+      m &&
+      m[1] !== m[1].toUpperCase() && // not an ALL-CAPS heading like "WEB DEVELOPER"
+      !/^(BSc|BA|BEng|MEng|MSc|MA|LLB|PhD)\b/.test(m[1]) && // not a degree line
+      !/university|college|institute|school|academy/i.test(m[1])
+    ) {
+      out.name = m[1];
       break;
     }
   }

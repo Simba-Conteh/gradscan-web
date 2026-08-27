@@ -44,16 +44,19 @@ export default function ProfileForm({
   const [busy, setBusy] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [autoFilled, setAutoFilled] = useState<string[]>([]);
+  const [reading, setReading] = useState<string | null>(null);
+  const [fileError, setFileError] = useState("");
+  const [newSkill, setNewSkill] = useState("");
 
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP((x) => ({ ...x, [k]: v }));
   const toggle = (k: "sectors" | "traits") => (v: string) =>
     set(k, p[k].includes(v) ? p[k].filter((x) => x !== v) : [...p[k], v]);
 
-  function scanCV() {
-    const found = extractApplicant(p.cvText);
+  function runScan(cvText: string) {
+    const found = extractApplicant(cvText);
     const filled: string[] = [];
     setP((x) => {
-      const next = { ...x, skills: extractSkills(x.cvText + " " + x.projects, x.skills) };
+      const next = { ...x, cvText, skills: extractSkills(cvText + " " + x.projects, x.skills) };
       // Fill only what the user hasn't already typed - the scan assists, never overwrites.
       if (found.name && !x.name) { next.name = found.name; filled.push("name"); }
       if (found.course && !x.course) { next.course = found.course; filled.push("course"); }
@@ -67,6 +70,31 @@ export default function ProfileForm({
     });
     setAutoFilled(filled);
     setScanned(true);
+  }
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setFileError("");
+    setScanned(false);
+    setReading("Reading file...");
+    try {
+      const { readCVFile } = await import("@/lib/cvfile");
+      const text = await readCVFile(file, setReading);
+      runScan(text);
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : "Couldn't read that file.");
+    } finally {
+      setReading(null);
+    }
+  }
+
+  function addSkill() {
+    const s = newSkill.trim();
+    if (!s) return;
+    if (!p.skills.some((k) => k.toLowerCase() === s.toLowerCase())) set("skills", [...p.skills, s]);
+    setNewSkill("");
   }
 
   async function submit(e: React.FormEvent) {
@@ -178,31 +206,75 @@ export default function ProfileForm({
       </div>
 
       <div>
-        <label className="label">CV scanner — paste your CV text</label>
+        <label className="label">CV scanner — upload your CV (PDF, photo, or .txt) or paste the text</label>
+        <div className="mb-2 flex flex-wrap items-center gap-3">
+          <label className="btn-ghost !py-1.5 text-sm">
+            📄 Upload CV file
+            <input
+              type="file"
+              accept=".txt,.md,.pdf,image/*"
+              onChange={onFile}
+              className="hidden"
+              disabled={!!reading}
+            />
+          </label>
+          {reading && <span className="text-xs text-warn">⏳ {reading}</span>}
+          {fileError && <span className="text-xs text-danger">{fileError}</span>}
+        </div>
+        <p className="mb-2 text-xs text-muted">
+          Your file is read entirely in this browser — it is never uploaded or stored anywhere, so
+          there is nothing to delete. Only the extracted text below is kept, and only when you save.
+        </p>
         <textarea
           rows={5}
           value={p.cvText}
           onChange={(e) => set("cvText", e.target.value)}
-          placeholder="Paste your CV here and hit Scan CV — skills are extracted automatically."
+          placeholder="...or paste your CV text here and hit Scan CV."
         />
         <div className="mt-2 flex items-center gap-3">
-          <button type="button" onClick={scanCV} className="btn-ghost">
+          <button type="button" onClick={() => runScan(p.cvText)} className="btn-ghost" disabled={!!reading}>
             Scan CV
           </button>
           {scanned && (
             <span className="text-xs text-ok">
-              ✓ {p.skills.length} skills on file
+              ✓ {p.skills.length} skills found
               {autoFilled.length > 0 && <> · auto-filled: {autoFilled.join(", ")} — check they look right</>}
             </span>
           )}
         </div>
-        {p.skills.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {p.skills.map((k) => (
-              <span key={k} className="chip chip-kw">
-                {k}
-              </span>
-            ))}
+        {(scanned || p.skills.length > 0) && (
+          <div className="mt-3">
+            <span className="label">Your skills — click × to remove, add anything the scan missed</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {p.skills.map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  title={`Remove ${k}`}
+                  onClick={() => set("skills", p.skills.filter((s) => s !== k))}
+                  className="chip chip-kw !cursor-pointer hover:!border-danger hover:!text-danger"
+                >
+                  {k} <span aria-hidden>×</span>
+                </button>
+              ))}
+              <input
+                value={newSkill}
+                onChange={(e) => setNewSkill(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addSkill();
+                  }
+                }}
+                placeholder="+ add a skill"
+                className="!w-36 !rounded-full !py-1 text-[13px]"
+              />
+              {newSkill.trim() && (
+                <button type="button" onClick={addSkill} className="btn-ghost !px-3 !py-1 text-xs">
+                  Add
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
