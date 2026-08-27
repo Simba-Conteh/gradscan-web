@@ -45,16 +45,17 @@ type ProfileRow = {
   projects: string;
   skills: string[];
   cv_text: string;
+  url_scan_consent: boolean;
 };
 
 function fromRow(r: ProfileRow): Profile {
-  const { user_id: _uid, cv_text, ...rest } = r;
-  return { ...EMPTY_PROFILE, ...rest, cvText: cv_text ?? "" };
+  const { user_id: _uid, cv_text, url_scan_consent, ...rest } = r;
+  return { ...EMPTY_PROFILE, ...rest, cvText: cv_text ?? "", urlScanConsent: url_scan_consent ?? false };
 }
 
 function toRow(userId: string, p: Profile): ProfileRow {
-  const { cvText, ...rest } = p;
-  return { user_id: userId, ...rest, cv_text: cvText };
+  const { cvText, urlScanConsent, ...rest } = p;
+  return { user_id: userId, ...rest, cv_text: cvText, url_scan_consent: urlScanConsent };
 }
 
 export const supabaseBackend: Backend = {

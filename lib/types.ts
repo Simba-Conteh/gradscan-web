@@ -40,6 +40,9 @@ export interface Profile {
   projects: string;
   skills: string[];
   cvText: string;
+  /** Explicit opt-in: profile URLs (LinkedIn/portfolio) may be scanned to
+   *  strengthen future job applications. Never assumed - unticked by default. */
+  urlScanConsent: boolean;
 }
 
 export interface User {
@@ -62,4 +65,5 @@ export const EMPTY_PROFILE: Profile = {
   projects: "",
   skills: [],
   cvText: "",
+  urlScanConsent: false,
 };

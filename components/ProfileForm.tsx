@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EMPTY_PROFILE, type Profile } from "@/lib/types";
 import { GRADES, SECTORS, TRAITS, UNIVERSITIES } from "@/lib/constants";
 import { extractSkills } from "@/lib/fit";
+import { extractApplicant } from "@/lib/extract";
 
 function Chips({
   all,
@@ -39,16 +40,32 @@ export default function ProfileForm({
   submitLabel: string;
   onSave: (p: Profile) => Promise<void>;
 }) {
-  const [p, setP] = useState<Profile>(initial ?? EMPTY_PROFILE);
+  const [p, setP] = useState<Profile>({ ...EMPTY_PROFILE, ...(initial ?? {}) });
   const [busy, setBusy] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [autoFilled, setAutoFilled] = useState<string[]>([]);
 
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP((x) => ({ ...x, [k]: v }));
   const toggle = (k: "sectors" | "traits") => (v: string) =>
     set(k, p[k].includes(v) ? p[k].filter((x) => x !== v) : [...p[k], v]);
 
   function scanCV() {
-    set("skills", extractSkills(p.cvText + " " + p.projects, p.skills));
+    const found = extractApplicant(p.cvText);
+    const filled: string[] = [];
+    setP((x) => {
+      const next = { ...x, skills: extractSkills(x.cvText + " " + x.projects, x.skills) };
+      // Fill only what the user hasn't already typed - the scan assists, never overwrites.
+      if (found.name && !x.name) { next.name = found.name; filled.push("name"); }
+      if (found.course && !x.course) { next.course = found.course; filled.push("course"); }
+      if (found.university && !x.university) { next.university = found.university; filled.push("university"); }
+      if (found.grade && x.grade === EMPTY_PROFILE.grade && found.grade !== x.grade) {
+        next.grade = found.grade; filled.push("grade");
+      }
+      if (found.linkedin && !x.linkedin) { next.linkedin = found.linkedin; filled.push("LinkedIn"); }
+      if (found.portfolio && !x.portfolio) { next.portfolio = found.portfolio; filled.push("portfolio"); }
+      return next;
+    });
+    setAutoFilled(filled);
     setScanned(true);
   }
 
@@ -173,7 +190,10 @@ export default function ProfileForm({
             Scan CV
           </button>
           {scanned && (
-            <span className="text-xs text-ok">✓ {p.skills.length} skills on file</span>
+            <span className="text-xs text-ok">
+              ✓ {p.skills.length} skills on file
+              {autoFilled.length > 0 && <> · auto-filled: {autoFilled.join(", ")} — check they look right</>}
+            </span>
           )}
         </div>
         {p.skills.length > 0 && (
@@ -186,6 +206,23 @@ export default function ProfileForm({
           </div>
         )}
       </div>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-panel2 p-4">
+        <input
+          type="checkbox"
+          checked={p.urlScanConsent}
+          onChange={(e) => set("urlScanConsent", e.target.checked)}
+          className="mt-0.5 !h-4 !w-4 accent-[#5eead4]"
+        />
+        <span className="text-sm">
+          I confirm it&apos;s okay for GradScan to scan the URLs on my profile (LinkedIn,
+          portfolio) to strengthen my matches and support further job applications.
+          <span className="mt-1 block text-xs text-muted">
+            Optional — everything else works without it. You can untick this at any time and no
+            URL is ever scanned without it.
+          </span>
+        </span>
+      </label>
 
       <button className="btn" disabled={busy}>
         {busy ? "Saving..." : submitLabel}

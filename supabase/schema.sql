@@ -17,6 +17,9 @@ create table if not exists public.profiles (
   projects    text not null default '',
   skills      text[] not null default '{}',
   cv_text     text not null default '',
+  -- Explicit opt-in for scanning the profile's URLs (LinkedIn/portfolio)
+  -- to support further job applications. Defaults to false, never assumed.
+  url_scan_consent boolean not null default false,
   updated_at  timestamptz not null default now()
 );
 
