@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import RolesTable from "@/components/RolesTable";
 import { backend } from "@/lib/backend";
-import { getRolesFile } from "@/lib/roles";
+import { useRoles } from "@/lib/useRoles";
 import { daysUntil, fitScore } from "@/lib/fit";
 import { EMPTY_PROFILE, type Profile, type User } from "@/lib/types";
 
@@ -21,7 +21,7 @@ function Dashboard({ user }: { user: User }) {
     });
   }, [user.id, router]);
 
-  const { meta, roles } = getRolesFile();
+  const { meta, roles, live } = useRoles();
   const today = useMemo(() => new Date(meta.last_updated + "T00:00:00"), [meta.last_updated]);
 
   const scored = useMemo(
@@ -63,7 +63,9 @@ function Dashboard({ user }: { user: User }) {
         <h1 className="text-2xl font-bold">
           Hey {profile.name.split(" ")[0] || "there"} — your matches
         </h1>
-        <span className="text-xs text-muted">Data updated {meta.last_updated}</span>
+        <span className="text-xs text-muted">
+          {live ? "● Live feed · " : ""}Data updated {meta.last_updated}
+        </span>
       </div>
 
       {urgent.length > 0 && (
