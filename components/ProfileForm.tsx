@@ -137,6 +137,14 @@ export default function ProfileForm({
           </select>
         </div>
         <div>
+          <label className="label">Location (town/city)</label>
+          <input
+            value={p.location}
+            onChange={(e) => set("location", e.target.value)}
+            placeholder="e.g. Manchester"
+          />
+        </div>
+        <div>
           <label className="label">Age (optional)</label>
           <input
             type="number"

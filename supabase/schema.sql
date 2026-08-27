@@ -8,6 +8,7 @@ create table if not exists public.profiles (
   grade       text not null default '2:1',
   course      text not null default '',
   university  text not null default '',
+  location    text not null default '',
   age         text not null default '',
   demographic text not null default 'Prefer not to say',
   sectors     text[] not null default '{}',

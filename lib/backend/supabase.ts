@@ -36,6 +36,7 @@ type ProfileRow = {
   grade: string;
   course: string;
   university: string;
+  location: string;
   age: string;
   demographic: string;
   sectors: string[];

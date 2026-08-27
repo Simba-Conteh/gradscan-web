@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Role } from "@/lib/types";
+import type { Profile, Role } from "@/lib/types";
 import { daysUntil } from "@/lib/fit";
+import { generateCoverLetter, wordCount } from "@/lib/coverletter";
 
 type ScoredRole = Role & { fit: number };
 type SortKey = "fit" | "company" | "title" | "sector" | "location" | "opens" | "deadline" | "status";
@@ -35,11 +36,13 @@ export default function RolesTable({
   today,
   statusFilter,
   onStatusFilter,
+  profile,
 }: {
   roles: ScoredRole[];
   today: Date;
   statusFilter: string;
   onStatusFilter: (s: string) => void;
+  profile: Profile;
 }) {
   const [q, setQ] = useState("");
   const [sector, setSector] = useState("");
@@ -47,6 +50,35 @@ export default function RolesTable({
   const [sortKey, setSortKey] = useState<SortKey>("fit");
   const [sortDir, setSortDir] = useState(-1);
   const [openRow, setOpenRow] = useState<string | null>(null);
+  const [letterRole, setLetterRole] = useState<ScoredRole | null>(null);
+  const [letterText, setLetterText] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function openLetter(r: ScoredRole) {
+    setLetterRole(r);
+    setLetterText(generateCoverLetter(profile, r));
+    setCopied(false);
+  }
+
+  async function copyLetter() {
+    try {
+      await navigator.clipboard.writeText(letterText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  }
+
+  function downloadLetter() {
+    const blob = new Blob([letterText], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    // Recruiter-searchable filename convention: Firstname-Lastname-Cover-Letter
+    const who = (profile.name || "My").trim().replace(/\s+/g, "-");
+    const co = letterRole?.company.replace(/\W+/g, "-") ?? "role";
+    a.download = `${who}-Cover-Letter-${co}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
   const sectors = useMemo(() => [...new Set(roles.map((r) => r.sector))].sort(), [roles]);
   const types = useMemo(() => [...new Set(roles.map((r) => r.type))].sort(), [roles]);
@@ -164,6 +196,7 @@ export default function RolesTable({
                   role={r}
                   expanded={expanded}
                   onToggle={() => setOpenRow(expanded ? null : r.id)}
+                  onLetter={() => openLetter(r)}
                   deadlineCell={
                     <span className={urgentCls}>
                       {fmt(r.deadline)}
@@ -183,6 +216,65 @@ export default function RolesTable({
           </tbody>
         </table>
       </div>
+
+      {letterRole && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setLetterRole(null)}
+        >
+          <div
+            className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-line bg-panel p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h3 className="text-lg font-bold">
+                Cover letter — {letterRole.company}
+                <span className="ml-2 text-sm font-normal text-muted">{letterRole.title}</span>
+              </h3>
+              <button
+                onClick={() => setLetterRole(null)}
+                className="text-xl leading-none text-muted hover:text-body"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-muted">
+              Drafted from your profile for this specific role — edit before using it, it is a
+              starting point, not a submission. UK guidance: 250–400 words, one A4 page, sent as
+              PDF; swap the greeting for a named contact if you can find one (then sign off
+              &quot;Yours sincerely&quot;).
+            </p>
+            <textarea
+              value={letterText}
+              onChange={(e) => setLetterText(e.target.value)}
+              className="min-h-[320px] flex-1 whitespace-pre-wrap font-[inherit] text-sm leading-relaxed"
+            />
+            <div className="mt-3 flex items-center gap-2">
+              <button onClick={copyLetter} className="btn">
+                {copied ? "✓ Copied" : "Copy"}
+              </button>
+              <button onClick={downloadLetter} className="btn-ghost">
+                Download .txt
+              </button>
+              <button
+                onClick={() => setLetterText(generateCoverLetter(profile, letterRole))}
+                className="btn-ghost"
+                title="Discard edits and re-draft from your profile"
+              >
+                Re-draft
+              </button>
+              <span
+                className={`ml-auto text-xs ${
+                  wordCount(letterText) > 400 ? "text-danger" : "text-muted"
+                }`}
+              >
+                {wordCount(letterText)} words
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -191,11 +283,13 @@ function FragmentRow({
   role: r,
   expanded,
   onToggle,
+  onLetter,
   deadlineCell,
 }: {
   role: ScoredRole;
   expanded: boolean;
   onToggle: () => void;
+  onLetter: () => void;
   deadlineCell: React.ReactNode;
 }) {
   const fitCls = r.fit >= 4 ? "text-ok" : r.fit === 3 ? "text-warn" : "text-muted";
@@ -253,6 +347,18 @@ function FragmentRow({
               <div>
                 <div className="label !mb-0.5 text-accent">First seen / UK-confirmed</div>
                 {r.first_seen} · {r.region_confirmed ? "✓ UK source verified" : "✗ not verified"}
+              </div>
+              <div className="flex items-start">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLetter();
+                  }}
+                  className="btn !py-1.5 text-xs"
+                >
+                  ✉ Draft cover letter
+                </button>
               </div>
             </div>
           </td>

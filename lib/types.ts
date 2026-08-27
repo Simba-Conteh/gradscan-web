@@ -31,6 +31,7 @@ export interface Profile {
   grade: string;
   course: string;
   university: string;
+  location: string;
   age: string;
   demographic: string;
   sectors: string[];
@@ -56,6 +57,7 @@ export const EMPTY_PROFILE: Profile = {
   grade: "2:1",
   course: "",
   university: "",
+  location: "",
   age: "",
   demographic: "Prefer not to say",
   sectors: [],
