@@ -100,6 +100,7 @@ function Dashboard({ user }: { user: User }) {
         statusFilter={statusFilter}
         onStatusFilter={setStatusFilter}
         profile={profile}
+        userId={user.id}
       />
 
       <p className="mt-6 text-xs leading-relaxed text-muted">

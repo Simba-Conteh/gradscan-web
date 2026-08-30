@@ -290,6 +290,21 @@ export default function ProfileForm({
       <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-panel2 p-4">
         <input
           type="checkbox"
+          checked={p.emailAlerts}
+          onChange={(e) => set("emailAlerts", e.target.checked)}
+          className="mt-0.5 !h-4 !w-4 accent-[#5eead4]"
+        />
+        <span className="text-sm">
+          Email me job alerts when a role I&apos;m watching goes live or its deadline moves.
+          <span className="mt-1 block text-xs text-muted">
+            Watch roles with the 🔔 button on the dashboard. Untick any time to stop alerts.
+          </span>
+        </span>
+      </label>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-panel2 p-4">
+        <input
+          type="checkbox"
           checked={p.urlScanConsent}
           onChange={(e) => set("urlScanConsent", e.target.checked)}
           className="mt-0.5 !h-4 !w-4 accent-[#5eead4]"

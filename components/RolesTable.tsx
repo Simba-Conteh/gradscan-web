@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Profile, Role } from "@/lib/types";
 import { daysUntil } from "@/lib/fit";
 import { generateCoverLetter, wordCount } from "@/lib/coverletter";
+import { classifyRole, FAMILIES } from "@/lib/classify";
+import { backend } from "@/lib/backend";
+import Discussion from "@/components/Discussion";
 
 type ScoredRole = Role & { fit: number };
 type SortKey = "fit" | "company" | "title" | "sector" | "location" | "opens" | "deadline" | "status";
@@ -37,22 +40,43 @@ export default function RolesTable({
   statusFilter,
   onStatusFilter,
   profile,
+  userId,
 }: {
   roles: ScoredRole[];
   today: Date;
   statusFilter: string;
   onStatusFilter: (s: string) => void;
   profile: Profile;
+  userId: string;
 }) {
   const [q, setQ] = useState("");
+  const [family, setFamily] = useState("");
   const [sector, setSector] = useState("");
   const [type, setType] = useState("");
+  const [minFit, setMinFit] = useState(0);
+  const [watchingOnly, setWatchingOnly] = useState(false);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("fit");
   const [sortDir, setSortDir] = useState(-1);
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [letterRole, setLetterRole] = useState<ScoredRole | null>(null);
   const [letterText, setLetterText] = useState("");
   const [copied, setCopied] = useState(false);
+  const [discussRole, setDiscussRole] = useState<ScoredRole | null>(null);
+
+  useEffect(() => {
+    backend.getWatchlist(userId).then(setWatchlist).catch(() => {});
+  }, [userId]);
+
+  async function toggleWatch(roleId: string) {
+    const on = !watchlist.includes(roleId);
+    setWatchlist((w) => (on ? [...w, roleId] : w.filter((id) => id !== roleId)));
+    try {
+      await backend.setWatch(userId, roleId, on);
+    } catch {
+      setWatchlist((w) => (on ? w.filter((id) => id !== roleId) : [...w, roleId]));
+    }
+  }
 
   function openLetter(r: ScoredRole) {
     setLetterRole(r);
@@ -88,9 +112,12 @@ export default function RolesTable({
 
   const rows = useMemo(() => {
     let out = roles.filter((r) => {
+      if (family && classifyRole(r) !== family) return false;
       if (sector && r.sector !== sector) return false;
       if (statusFilter && r.status !== statusFilter) return false;
       if (type && r.type !== type) return false;
+      if (minFit && r.fit < minFit) return false;
+      if (watchingOnly && !watchlist.includes(r.id)) return false;
       if (q) {
         const hay = `${r.company} ${r.title} ${r.location} ${r.sector}`.toLowerCase();
         if (!hay.includes(q.toLowerCase())) return false;
@@ -108,7 +135,7 @@ export default function RolesTable({
       return sortDir * ((x as number) - (y as number));
     });
     return out;
-  }, [roles, q, sector, statusFilter, type, sortKey, sortDir]);
+  }, [roles, q, family, sector, statusFilter, type, minFit, watchingOnly, watchlist, sortKey, sortDir]);
 
   function sortBy(k: SortKey) {
     if (sortKey === k) setSortDir((d) => -d);
@@ -136,6 +163,22 @@ export default function RolesTable({
           placeholder="🔍 Search company, role, location..."
           className="!w-auto min-w-[220px] flex-1"
         />
+        <select className="!w-auto" value={family} onChange={(e) => setFamily(e.target.value)}>
+          <option value="">All role types</option>
+          {FAMILIES.filter((f) => roles.some((r) => classifyRole(r) === f)).map((f) => (
+            <option key={f}>{f}</option>
+          ))}
+        </select>
+        <select
+          className="!w-auto"
+          value={minFit}
+          onChange={(e) => setMinFit(Number(e.target.value))}
+        >
+          <option value={0}>Any fit</option>
+          <option value={3}>Fit 3+</option>
+          <option value={4}>Fit 4+</option>
+          <option value={5}>Fit 5 only</option>
+        </select>
         <select className="!w-auto" value={sector} onChange={(e) => setSector(e.target.value)}>
           <option value="">All sectors</option>
           {sectors.map((s) => (
@@ -158,6 +201,14 @@ export default function RolesTable({
             <option key={t}>{t}</option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => setWatchingOnly((w) => !w)}
+          className={`chip !py-2 ${watchingOnly ? "chip-on" : ""}`}
+          title="Show only roles you're watching"
+        >
+          🔔 Watching{watchlist.length ? ` (${watchlist.length})` : ""}
+        </button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-line">
@@ -195,8 +246,11 @@ export default function RolesTable({
                   key={r.id}
                   role={r}
                   expanded={expanded}
+                  watched={watchlist.includes(r.id)}
                   onToggle={() => setOpenRow(expanded ? null : r.id)}
                   onLetter={() => openLetter(r)}
+                  onWatch={() => toggleWatch(r.id)}
+                  onDiscuss={() => setDiscussRole(r)}
                   deadlineCell={
                     <span className={urgentCls}>
                       {fmt(r.deadline)}
@@ -216,6 +270,15 @@ export default function RolesTable({
           </tbody>
         </table>
       </div>
+
+      {discussRole && (
+        <Discussion
+          role={discussRole}
+          userId={userId}
+          authorName={profile.name.split(" ")[0] || "Anonymous"}
+          onClose={() => setDiscussRole(null)}
+        />
+      )}
 
       {letterRole && (
         <div
@@ -282,14 +345,20 @@ export default function RolesTable({
 function FragmentRow({
   role: r,
   expanded,
+  watched,
   onToggle,
   onLetter,
+  onWatch,
+  onDiscuss,
   deadlineCell,
 }: {
   role: ScoredRole;
   expanded: boolean;
+  watched: boolean;
   onToggle: () => void;
   onLetter: () => void;
+  onWatch: () => void;
+  onDiscuss: () => void;
   deadlineCell: React.ReactNode;
 }) {
   const fitCls = r.fit >= 4 ? "text-ok" : r.fit === 3 ? "text-warn" : "text-muted";
@@ -348,7 +417,7 @@ function FragmentRow({
                 <div className="label !mb-0.5 text-accent">First seen / UK-confirmed</div>
                 {r.first_seen} · {r.region_confirmed ? "✓ UK source verified" : "✗ not verified"}
               </div>
-              <div className="flex items-start">
+              <div className="flex flex-wrap items-start gap-2">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -358,6 +427,27 @@ function FragmentRow({
                   className="btn !py-1.5 text-xs"
                 >
                   ✉ Draft cover letter
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onWatch();
+                  }}
+                  className={`btn-ghost !py-1.5 text-xs ${watched ? "!border-warn !text-warn" : ""}`}
+                  title={watched ? "Stop watching this role" : "Get alerted when this role changes"}
+                >
+                  {watched ? "🔕 Watching" : "🔔 Watch role"}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDiscuss();
+                  }}
+                  className="btn-ghost !py-1.5 text-xs"
+                >
+                  💬 Discussion
                 </button>
               </div>
             </div>

@@ -59,6 +59,10 @@ const rows = roles.map((r) => ({
   updated_at: new Date().toISOString(),
 }));
 
+// Snapshot statuses before the upsert so we can detect roles going live.
+const { data: prevRows } = await db.from("roles").select("id,status");
+const prevStatus = new Map((prevRows ?? []).map((r) => [r.id, r.status]));
+
 const { error: upErr } = await db.from("roles").upsert(rows);
 if (upErr) {
   console.error("roles upsert FAILED:", upErr.message);
@@ -90,3 +94,60 @@ if (metaErr) {
   process.exit(1);
 }
 console.log(`Live database updated: ${rows.length} roles, last_updated ${meta.last_updated}`);
+
+// --- Job alerts: email users watching a role that just went live ----------
+// Requires RESEND_API_KEY (+ optional ALERT_FROM) in .env.sync. Without a
+// key, qualifying alerts are logged so nothing fails silently.
+const wentLive = rows.filter(
+  (r) => r.status === "Open" && prevStatus.has(r.id) && prevStatus.get(r.id) !== "Open",
+);
+if (wentLive.length > 0) {
+  const { data: alerts } = await db
+    .from("role_alerts")
+    .select("user_id, role_id")
+    .in("role_id", wentLive.map((r) => r.id));
+  if (alerts?.length) {
+    const userIds = [...new Set(alerts.map((a) => a.user_id))];
+    const { data: optedIn } = await db
+      .from("profiles")
+      .select("user_id")
+      .in("user_id", userIds)
+      .eq("email_alerts", true);
+    const optedSet = new Set((optedIn ?? []).map((p) => p.user_id));
+    const { data: usersPage } = await db.auth.admin.listUsers({ perPage: 1000 });
+    const emailById = new Map((usersPage?.users ?? []).map((u) => [u.id, u.email]));
+
+    for (const uid of userIds) {
+      if (!optedSet.has(uid)) continue;
+      const email = emailById.get(uid);
+      if (!email) continue;
+      const theirRoles = alerts
+        .filter((a) => a.user_id === uid)
+        .map((a) => wentLive.find((r) => r.id === a.role_id))
+        .filter(Boolean);
+      const lines = theirRoles.map((r) => `- ${r.company}: ${r.title} (${r.location}) is now OPEN`);
+      const body = `Good news - a role you're watching on GradScan just went live:\n\n${lines.join("\n")}\n\nApply early: most schemes fill on a rolling basis.\nhttps://gradscan-web-ashy.vercel.app\n\n(You get this because email alerts are ticked on your GradScan profile. Untick to stop.)`;
+
+      if (env.RESEND_API_KEY) {
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: env.ALERT_FROM ?? "GradScan <onboarding@resend.dev>",
+            to: [email],
+            subject: `GradScan alert: ${theirRoles[0].company} is now open`,
+            text: body,
+          }),
+        }).catch((e) => ({ ok: false, statusText: String(e) }));
+        console.log(`alert email to ${email}: ${res.ok ? "sent" : "FAILED " + res.statusText}`);
+      } else {
+        console.log(`alert queued (no RESEND_API_KEY) for ${email}: ${lines.join("; ")}`);
+      }
+    }
+  } else {
+    console.log(`${wentLive.length} role(s) went live but nobody is watching them yet.`);
+  }
+}

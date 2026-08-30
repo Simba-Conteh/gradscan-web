@@ -4,7 +4,7 @@
     "description": "Live UK graduate role scanner - source of truth. Rebuilt into dashboard.html by build_dashboard.py.",
     "last_updated": "2026-08-27",
     "region_scope": "UK-wide",
-    "portal_access_log": "2026-08-27 scan: the-trackr.com app pages JS-blank on plain fetch; gradcracker.com, brightnetwork.co.uk deadline pages, pwc.co.uk, goldmansachs.com, jobs.natwestgroup.com, careers.bbc.co.uk, totaljobs/CWJobs/technojobs returned 403/blank; targetjobs deadline page 404; ratemyplacement redirects to higherin.com. Roles from those sources verified via search-indexed employer content where possible; otherwise marked unconfirmed.",
+    "portal_access_log": "2026-08-27 scan: the-trackr.com app pages JS-blank on plain fetch; gradcracker.com, brightnetwork.co.uk deadline pages, pwc.co.uk, goldmansachs.com, jobs.natwestgroup.com, careers.bbc.co.uk, totaljobs/CWJobs/technojobs returned 403/blank; targetjobs deadline page 404; ratemyplacement redirects to higherin.com. Roles from those sources verified via search-indexed employer content where possible; otherwise marked unconfirmed. 2026-08-27 PM re-run: 10 priority roles re-checked, no status changes; Goldman higher.gs.com shows no 2027 EMEA Engineering req yet; gradcracker + brightnetwork + IBM UK early-careers + spartaglobal careers 403 this run; Netcompany grad dev postings (Leeds/London) expired - watch for reposts; Monzo has no grad engineering roles (piloting early-careers only).",
     "sourcing_rules": [
       "Only track roles that recruit into the UK. Leave off if unclear - never guess.",
       "Only record a date from a UK-specific source (employer's own UK page or the actual UK posting). A global page listing UK cities among many is not enough.",
@@ -822,6 +822,129 @@
       "tags": [
         "SQL",
         "software"
+      ]
+    },
+    {
+      "id": "softwire-grad-swe",
+      "company": "Softwire",
+      "title": "Graduate Consultant Software Engineer 2026",
+      "sector": "Technology",
+      "type": "Grad scheme",
+      "location": "London (Manchester, Cambridge per aggregators)",
+      "opens": null,
+      "deadline": null,
+      "status": "Open",
+      "min_grade": null,
+      "eligibility": "Graduates or soon-to-be graduates; degree not strictly required for proficient coders.",
+      "notes": "Live application portal verified at online.softwire.com (2026-08-27). Third-party listings state GBP 45,000 starting + profit share. Structured training (coding, source control, modern stacks) then client projects. softwire.com careers pages JS-rendered/unreadable on plain fetch, but the apply portal itself was live. Rolling - no deadline stated.",
+      "source": "https://online.softwire.com/apply/otherRoles?vacancyCode=k8EXJr",
+      "first_seen": "2026-08-27",
+      "region_confirmed": true,
+      "date_confidence": "indicative",
+      "tags": [
+        "C#",
+        "TypeScript",
+        "full stack",
+        "structured training"
+      ]
+    },
+    {
+      "id": "ocado-swe-grad",
+      "company": "Ocado Group",
+      "title": "Software Engineering Graduate (2027 cycle)",
+      "sector": "Technology",
+      "type": "Grad scheme",
+      "location": "Hatfield / Welwyn / London (hybrid)",
+      "opens": null,
+      "deadline": null,
+      "status": "Opens soon",
+      "min_grade": null,
+      "eligibility": "Degree in CS, Physics, Maths, AI, Robotics, ML or related; all disciplines considered. Right to work in UK for full programme duration required - NO visa sponsorship.",
+      "notes": "Employer early-careers page verified: Software Engineering stream 'Opening this winter', register-your-interest live now (2026-08-27). 2-year rotation: four 6-month placements (bot software, robotics control, ML webshop, data science). Prior cycle opened mid-December - expect similar. Salary ~GBP 36k per Glassdoor (not on employer page).",
+      "source": "https://careers.ocadogroup.com/teams/early-careers/graduates",
+      "first_seen": "2026-08-27",
+      "region_confirmed": true,
+      "date_confidence": "indicative",
+      "tags": [
+        "Java",
+        "Python",
+        "Machine Learning",
+        "rotation"
+      ]
+    },
+    {
+      "id": "fdm-swe-grad",
+      "company": "FDM Group",
+      "title": "Graduate Programme - Software Engineering Practice",
+      "sector": "Consulting",
+      "type": "Grad scheme",
+      "location": "UK-wide incl. Manchester, London, Glasgow, Leeds",
+      "opens": null,
+      "deadline": null,
+      "status": "Open",
+      "min_grade": null,
+      "eligibility": "Bachelor's in any grade, STEM preferred but non-STEM with tech passion encouraged.",
+      "notes": "Verified open on fdmgroup.com ('Apply now' live, 2026-08-27). Rolling year-round. 6-14 weeks paid training (Tech Industry Gold accredited) then 2-year client placement as Associate Consultant (Software Engineer, Tester, DevOps, Cloud pathways). Salary historically ~GBP 25-30k London. Flag: consultancy model with a placement commitment period - read the contract terms carefully.",
+      "source": "https://www.fdmgroup.com/candidates/graduate-programme/",
+      "first_seen": "2026-08-27",
+      "region_confirmed": true,
+      "date_confidence": "indicative",
+      "tags": [
+        "Java",
+        "C#",
+        "DevOps",
+        "cloud",
+        "structured training"
+      ]
+    },
+    {
+      "id": "sparta-swe-grad",
+      "company": "Sparta Global",
+      "title": "Graduate Software Engineering (Sparta Academy)",
+      "sector": "Consulting",
+      "type": "Grad scheme",
+      "location": "UK-wide academies (remote training + client placement)",
+      "opens": null,
+      "deadline": null,
+      "status": "Verify",
+      "min_grade": null,
+      "eligibility": "Any discipline, no STEM background required. UK-based; rolling year-round per third parties.",
+      "notes": "8-10 weeks paid training (Software Engineering / Testing / SDET / DevOps) then placement with ~100 employer partners. careers.spartaglobal.com returned 403 - live vacancies NOT confirmed this run; verify in a browser before applying. Same consultancy-commitment caveat as FDM.",
+      "source": "https://careers.spartaglobal.com/jobs/graduate",
+      "first_seen": "2026-08-27",
+      "region_confirmed": false,
+      "date_confidence": "unconfirmed",
+      "tags": [
+        "Java",
+        "C#",
+        "SDET",
+        "DevOps",
+        "structured training"
+      ]
+    },
+    {
+      "id": "starling-swe-2027",
+      "company": "Starling Bank",
+      "title": "Graduate Software Engineer 2027",
+      "sector": "Finance - Tech",
+      "type": "Grad scheme",
+      "location": "London / Cardiff / Manchester / Southampton (hybrid)",
+      "opens": null,
+      "deadline": null,
+      "status": "Verify",
+      "min_grade": null,
+      "eligibility": "No formal grade stated - hires on aptitude. Prior cycle preferred commutable distance to London, Cardiff or Manchester.",
+      "notes": "The Trackr lists 'Graduate Software Engineer - 2027' with opening TBC (JS page, unreadable on plain fetch). Starling engineering pages confirm UK hubs and stack (Java, Kotlin, AWS, Docker, React) but the job-board section did not render - live status unconfirmed. Manchester hub makes this a strong watch. Check starlingbank.com/careers directly.",
+      "source": "https://app.the-trackr.com/company/starling-bank",
+      "first_seen": "2026-08-27",
+      "region_confirmed": false,
+      "date_confidence": "unconfirmed",
+      "tags": [
+        "Java",
+        "Kotlin",
+        "AWS",
+        "React",
+        "fintech"
       ]
     }
   ]

@@ -47,16 +47,29 @@ type ProfileRow = {
   skills: string[];
   cv_text: string;
   url_scan_consent: boolean;
+  email_alerts: boolean;
 };
 
 function fromRow(r: ProfileRow): Profile {
-  const { user_id: _uid, cv_text, url_scan_consent, ...rest } = r;
-  return { ...EMPTY_PROFILE, ...rest, cvText: cv_text ?? "", urlScanConsent: url_scan_consent ?? false };
+  const { user_id: _uid, cv_text, url_scan_consent, email_alerts, ...rest } = r;
+  return {
+    ...EMPTY_PROFILE,
+    ...rest,
+    cvText: cv_text ?? "",
+    urlScanConsent: url_scan_consent ?? false,
+    emailAlerts: email_alerts ?? false,
+  };
 }
 
 function toRow(userId: string, p: Profile): ProfileRow {
-  const { cvText, urlScanConsent, ...rest } = p;
-  return { user_id: userId, ...rest, cv_text: cvText, url_scan_consent: urlScanConsent };
+  const { cvText, urlScanConsent, emailAlerts, ...rest } = p;
+  return {
+    user_id: userId,
+    ...rest,
+    cv_text: cvText,
+    url_scan_consent: urlScanConsent,
+    email_alerts: emailAlerts,
+  };
 }
 
 export const supabaseBackend: Backend = {
@@ -98,6 +111,40 @@ export const supabaseBackend: Backend = {
 
   async saveProfile(userId, profile) {
     const { error } = await sb().from("profiles").upsert(toRow(userId, profile));
+    if (error) throw new AuthError(error.message);
+  },
+
+  async getWatchlist(userId) {
+    const { data, error } = await sb().from("role_alerts").select("role_id").eq("user_id", userId);
+    if (error) throw new AuthError(error.message);
+    return (data ?? []).map((r) => r.role_id as string);
+  },
+
+  async setWatch(userId, roleId, on) {
+    const q = on
+      ? sb().from("role_alerts").upsert({ user_id: userId, role_id: roleId })
+      : sb().from("role_alerts").delete().eq("user_id", userId).eq("role_id", roleId);
+    const { error } = await q;
+    if (error) throw new AuthError(error.message);
+  },
+
+  async listComments(roleId) {
+    const { data, error } = await sb()
+      .from("role_comments")
+      .select("id, role_id, author_name, body, created_at")
+      .eq("role_id", roleId)
+      .order("created_at", { ascending: true });
+    if (error) throw new AuthError(error.message);
+    return data ?? [];
+  },
+
+  async addComment(userId, authorName, roleId, body) {
+    const { error } = await sb().from("role_comments").insert({
+      user_id: userId,
+      author_name: authorName || "Anonymous",
+      role_id: roleId,
+      body,
+    });
     if (error) throw new AuthError(error.message);
   },
 };

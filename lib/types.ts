@@ -44,6 +44,16 @@ export interface Profile {
   /** Explicit opt-in: profile URLs (LinkedIn/portfolio) may be scanned to
    *  strengthen future job applications. Never assumed - unticked by default. */
   urlScanConsent: boolean;
+  /** Opt-in: email the user when a role they watch goes live. */
+  emailAlerts: boolean;
+}
+
+export interface RoleComment {
+  id: string;
+  role_id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
 }
 
 export interface User {
@@ -68,4 +78,5 @@ export const EMPTY_PROFILE: Profile = {
   skills: [],
   cvText: "",
   urlScanConsent: false,
+  emailAlerts: false,
 };

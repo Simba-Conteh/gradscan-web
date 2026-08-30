@@ -90,4 +90,33 @@ export const localBackend: Backend = {
   async saveProfile(userId, profile) {
     write(`gradscan_profile_${userId}`, profile);
   },
+
+  async getWatchlist(userId) {
+    return read<string[]>(`gradscan_watch_${userId}`) ?? [];
+  },
+
+  async setWatch(userId, roleId, on) {
+    const list = new Set(read<string[]>(`gradscan_watch_${userId}`) ?? []);
+    if (on) list.add(roleId);
+    else list.delete(roleId);
+    write(`gradscan_watch_${userId}`, [...list]);
+  },
+
+  // Demo comments are per-browser only - the live site's shared discussion
+  // needs the Supabase backend.
+  async listComments(roleId) {
+    return read<import("../types").RoleComment[]>(`gradscan_comments_${roleId}`) ?? [];
+  },
+
+  async addComment(userId, authorName, roleId, body) {
+    const list = read<import("../types").RoleComment[]>(`gradscan_comments_${roleId}`) ?? [];
+    list.push({
+      id: crypto.randomUUID(),
+      role_id: roleId,
+      author_name: authorName || "Anonymous",
+      body,
+      created_at: new Date().toISOString(),
+    });
+    write(`gradscan_comments_${roleId}`, list);
+  },
 };
