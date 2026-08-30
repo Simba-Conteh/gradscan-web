@@ -126,7 +126,7 @@ if (wentLive.length > 0) {
         .map((a) => wentLive.find((r) => r.id === a.role_id))
         .filter(Boolean);
       const lines = theirRoles.map((r) => `- ${r.company}: ${r.title} (${r.location}) is now OPEN`);
-      const body = `Good news - a role you're watching on GradScan just went live:\n\n${lines.join("\n")}\n\nApply early: most schemes fill on a rolling basis.\nhttps://gradscan-web-ashy.vercel.app\n\n(You get this because email alerts are ticked on your GradScan profile. Untick to stop.)`;
+      const body = `Good news - a role you're watching on GradScan just went live:\n\n${lines.join("\n")}\n\nApply early: most schemes fill on a rolling basis.\nhttps://gradscan.uk\n\n(You get this because email alerts are ticked on your GradScan profile. Untick to stop.)`;
 
       if (env.RESEND_API_KEY) {
         const res = await fetch("https://api.resend.com/emails", {
